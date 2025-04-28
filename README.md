@@ -42,7 +42,7 @@ Users can view parking lot details and manager contact information before confir
 
 Installation & Setup
 Clone the repository:
-git clone https://github.com/yourusername/smart-parking-system.gitcd smart-parking-system
+[[git clone https://github.com/yourusername/smart-parking-system.gitcd smart-parking-system](https://github.com/Debarjya17/Smart-Parking-Website)](https://github.com/Debarjya17/Smart-Parking-Website)
 
 Set up Firebase:
 Create a Firebase project.

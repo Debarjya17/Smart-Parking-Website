@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Smart Parking</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: url('https://knowhow.distrelec.com/wp-content/uploads/2024/05/GettyImages-2048562094-min-1920x1024.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: white;
+    }
+    .overlay {
+      background-color: rgba(0, 0, 255, 0.2);
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
+    .container {
+      position: relative;
+      z-index: 1;
+      padding: 20px;
+      max-width: 400px;
+      margin: auto;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 10px;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    h3 {
+      margin-bottom: 5px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: none;
+      background: rgba(255, 255, 255, 0.8);
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #007BFF;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #0056b3;
+      cursor: pointer;
+    }
+    .error {
+      color: red;
+      font-size: 0.875rem;
+      margin-top: -8px;
+      margin-bottom: 10px;
+    }
+    .toggle-link {
+      text-align: center;
+      margin-top: 10px;
+    }
+    .toggle-link a {
+      color: #00BFFF;
+      text-decoration: none;
+    }
+    .toggle-link a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay"></div>
+  <div class="container">
+    <h1>Smart Parking System</h1>
+    <h2>Secure & Fast Parking</h2>
+    
+    <!-- Login Form -->
+    <form id="loginForm" onsubmit="return login(event)">
+      <h3>Email</h3>
+      <input type="text" id="username" name="username" placeholder="Email" required>
+      <span id="userIdError" class="error"></span>
+      
+      <h3>Password</h3>
+      <input type="password" id="password" name="password" placeholder="Password" required>
+      <span id="passwordError" class="error"></span>
+      
+      <button type="submit">Login</button>
+    </form>
+  
+    <!-- Signup Form -->
+    <form id="signupForm" onsubmit="return signup(event)" style="display: none;">
+      <h3>Email</h3>
+      <input type="text" id="newUserId" placeholder="Enter your Email" required>
+      <span id="newUserIdError" class="error"></span>
+      
+      <h3>Password</h3>
+      <input type="password" id="newPassword" placeholder="Choose a Password" required>
+      <span id="newPasswordError" class="error"></span>
+      
+      <button type="submit">Sign Up</button>
+    </form>
+  
+    <!-- Toggle between login and signup -->
+    <div class="toggle-link">
+      <p id="toggleText">Not a member yet? <a href="#" onclick="toggleForm()">Sign up</a></p>
+    </div>
+  </div>
+
+  <!-- Firebase Integration Script -->
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+    // Your Firebase configuration (replace with your own configuration details)
+    const firebaseConfig = {
+      apiKey: "AIzaSyD4QBAHWJA5RVReMdlsuZzRzXQbnPGVLWg",
+      authDomain: "smart-parking-40a9d.firebaseapp.com",
+      projectId: "smart-parking-40a9d",
+      storageBucket: "smart-parking-40a9d.firebasestorage.app",
+      messagingSenderId: "169078637682",
+      appId: "1:169078637682:web:058ace01c23cf0264deeeb",
+      measurementId: "G-C44D2YNMXR"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Login function: Redirects the user upon successful login.
+    window.login = function(event) {
+      event.preventDefault();
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      // Clear previous error messages
+      document.getElementById("userIdError").textContent = "";
+      document.getElementById("passwordError").textContent = "";
+
+      signInWithEmailAndPassword(auth, username, password)
+        .then((userCredential) => {
+          // Signed in successfully
+          const user = userCredential.user;
+          console.log("Logged in successfully:", user);
+          // Redirect the user to the specified page
+          window.location.href = "http://localhost/Smart_web/page_2.html#";
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          console.error("Login error:", errorCode, errorMessage);
+
+          if (errorCode === 'auth/user-not-found') {
+            document.getElementById("userIdError").textContent = "User not found!";
+          } else if (errorCode === 'auth/wrong-password') {
+            document.getElementById("passwordError").textContent = "Incorrect password!";
+          } else {
+            document.getElementById("userIdError").textContent = errorMessage;
+          }
+        });
+      return false;
+    };
+
+    // Signup function: Shows a pop-up message on successful signup.
+    window.signup = function(event) {
+      event.preventDefault();
+      const newUserId = document.getElementById("newUserId").value;
+      const newPassword = document.getElementById("newPassword").value;
+
+      // Clear previous error messages
+      document.getElementById("newUserIdError").textContent = "";
+      document.getElementById("newPasswordError").textContent = "";
+
+      createUserWithEmailAndPassword(auth, newUserId, newPassword)
+        .then((userCredential) => {
+          // User registered successfully
+          const user = userCredential.user;
+          console.log("User registered successfully:", user);
+          // Show a pop-up message to the user
+          window.alert("Signup successful! You can now login.");
+          // Optionally, you can automatically switch to the login form after signup:
+          toggleForm();
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          console.error("Signup error:", errorCode, errorMessage);
+
+          if (errorCode === 'auth/email-already-in-use') {
+            document.getElementById("newUserIdError").textContent = "Email already in use!";
+          } else {
+            document.getElementById("newUserIdError").textContent = errorMessage;
+          }
+        });
+      return false;
+    };
+
+    // Toggle form function to switch between login and signup forms.
+    window.toggleForm = function() {
+      const loginForm = document.getElementById("loginForm");
+      const signupForm = document.getElementById("signupForm");
+      const toggleText = document.getElementById("toggleText");
+
+      if (loginForm.style.display !== "none") {
+        loginForm.style.display = "none";
+        signupForm.style.display = "block";
+        toggleText.innerHTML = 'Already a member? <a href="#" onclick="toggleForm()">Login</a>';
+      } else {
+        signupForm.style.display = "none";
+        loginForm.style.display = "block";
+        toggleText.innerHTML = 'Not a member yet? <a href="#" onclick="toggleForm()">Sign up</a>';
+      }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Parking Recommendation</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: url('https://knowhow.distrelec.com/wp-content/uploads/2024/05/GettyImages-2048562094-min-1920x1024.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: white;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .container {
+      display: flex;
+      height: 100vh;
+      width: 100%;
+    }
+    #map {
+      flex: 1;
+      height: 100%;
+    }
+    #sidebar {
+      width: 320px;
+      height: 100%;
+      overflow-y: auto;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      box-sizing: border-box;
+    }
+    #sidebar h3 {
+      border-bottom: 1px solid white;
+      padding-bottom: 5px;
+      margin-top: 0;
+    }
+    #sidebar div {
+      margin-bottom: 12px;
+      background-color: rgba(255, 255, 255, 0.1);
+      padding: 10px;
+      border-radius: 8px;
+    }
+    .custom-marker {
+      background-color: #ff5733;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      border: 2px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+    a {
+      color: #00d0ff;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    #priorityToggle {
+      background: #00bfff;
+      border: none;
+      color: white;
+      font-weight: bold;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div id="map"></div>
+  <div id="sidebar">
+    <button id="priorityToggle">Priority Parking</button>
+    <h3>Nearest Parking Lots</h3>
+    <div id="nearby-parking"></div>
+    <h3>Other Recommended Lots</h3>
+    <div id="far-parking"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+<script>
+ const parkingData = [
+  { name: "Dlf Parking", occupancy: "50", lat: 22.58415062, lon: 88.44566938, manager: "Arjun Mehta", contact: "9876543210" },
+  { name: "Central mall", occupancy: "100", lat: 22.58341066, lon: 88.45874035, manager: "Rita Singh", contact: "9812345678" },
+  { name: "Presidency University", occupancy: "50", lat: 22.58181676, lon: 88.4779421, manager: "Dr. Anil Ghosh", contact: "9833123456" },
+  { name: "Opposite Presidency University", occupancy: "60", lat: 22.58278134, lon: 88.47676837, manager: "Pratik Roy", contact: "9876541230" },
+  { name: "Tata Medical", occupancy: "20", lat: 22.57760232, lon: 88.47849464, manager: "Suman Das", contact: "9822456789" },
+  { name: "Chinar Park", occupancy: "40", lat: 22.62510719, lon: 88.43718924, manager: "Megha Sharma", contact: "9800123456" },
+  { name: "Mothers Wax Museum", occupancy: "50", lat: 22.59980777, lon: 88.47160423, manager: "Ajay Dutta", contact: "9898765432" },
+  { name: "Eco Park Golf Arena", occupancy: "50", lat: 22.60781662, lon: 88.46387953, manager: "Nisha Paul", contact: "9765432109" },
+  { name: "Eco Park Gate 4", occupancy: "50", lat: 22.6111625, lon: 88.4662039, manager: "Rahul Sen", contact: "9811223344" },
+  { name: "Eco Park Beside Misti Hub", occupancy: "50", lat: 22.60726274, lon: 88.46793746, manager: "Debjani Chakraborty", contact: "9877098765" },
+  { name: "Eco Park", occupancy: "40", lat: 22.59454192, lon: 88.47215929, manager: "Pritam Nandi", contact: "9823001234" },
+  { name: "Mani Square Mall Parking", occupancy: "1200", lat: 22.5765, lon: 88.3963, manager: "Anita Sinha", contact: "9850067890" },
+  { name: "Kankurgachi Parking Lot", occupancy: "100", lat: 22.5726, lon: 88.3921, manager: "Manoj Sardar", contact: "9800456123" },
+  { name: "Shyambazar 5-Point Crossing Parking", occupancy: "150", lat: 22.6018, lon: 88.3774, manager: "Sunita Roy", contact: "9876554321" },
+  { name: "Hatibagan Market Parking", occupancy: "200", lat: 22.5850, lon: 88.3680, manager: "Rajeev Halder", contact: "9833001122" },
+  { name: "Bagbazar Ghat Parking", occupancy: "80", lat: 22.6042, lon: 88.3705, manager: "Neel Sengupta", contact: "9844122334" },
+  { name: "Sovabazar Metro Parking", occupancy: "120", lat: 22.6000, lon: 88.3742, manager: "Sudipta Choudhury", contact: "9812333444" },
+  { name: "Ultadanga Hudco More Parking", occupancy: "180", lat: 22.5958, lon: 88.3925, manager: "Priya Dey", contact: "9876000011" },
+  { name: "Lake Town Parking Area", occupancy: "160", lat: 22.6010, lon: 88.4080, manager: "Amitava Ghosh", contact: "9867543210" },
+  { name: "Dum Dum Station Parking", occupancy: "250", lat: 22.6195, lon: 88.3910, manager: "Joydeep Pal", contact: "9843012345" },
+  { name: "Belgachia Metro Parking", occupancy: "100", lat: 22.6035, lon: 88.3830, manager: "Tamal Dutta", contact: "9811220099" },
+  { name: "Nagerbazar Parking Lot", occupancy: "130", lat: 22.6278, lon: 88.3965, manager: "Tanushree Basu", contact: "9800045678" },
+  { name: "Paikpara Raja Manindra Road Parking", occupancy: "90", lat: 22.6050, lon: 88.3790, manager: "Somnath Bera", contact: "9820099112" },
+  { name: "Chitpur Station Parking", occupancy: "110", lat: 22.6180, lon: 88.3715, manager: "Ranjan Paul", contact: "9845087654" },
+  { name: "Cossipore Road Parking", occupancy: "70", lat: 22.6310, lon: 88.3685, manager: "Bikash Nandi", contact: "9898223344" },
+  { name: "R.G. Kar Medical College Parking", occupancy: "140", lat: 22.5950, lon: 88.3795, manager: "Anupam Das", contact: "9834112233" },
+  { name: "South City Mall Rooftop Parking", occupancy: "500", lat: 22.5018, lon: 88.3613, manager: "Rakesh Mehra", contact: "9810009876" },
+  { name: "Gariahat Market Parking", occupancy: "300", lat: 22.5175, lon: 88.3667, manager: "Madhuri Saha", contact: "9845432100" },
+  { name: "Kalighat Temple Parking", occupancy: "250", lat: 22.5170, lon: 88.3460, manager: "Binod Kumar", contact: "9877011223" },
+  { name: "Jadavpur 8B Bus Stand Parking", occupancy: "200", lat: 22.4980, lon: 88.3700, manager: "Sneha Roy", contact: "9800678923" },
+  { name: "Tollygunge Metro Station Parking", occupancy: "180", lat: 22.4910, lon: 88.3465, manager: "Avik Saha", contact: "9867000011" },
+  { name: "Prince Anwar Shah Road Parking", occupancy: "150", lat: 22.5030, lon: 88.3540, manager: "Namrata Mukherjee", contact: "9833667890" },
+  { name: "Ballygunge Station Parking", occupancy: "120", lat: 22.5210, lon: 88.3660, manager: "Rajashree Das", contact: "9812347890" },
+  { name: "Deshapriya Park Parking", occupancy: "130", lat: 22.5125, lon: 88.3535, manager: "Soham Ghosh", contact: "9844002211" },
+  { name: "Lake Mall Parking", occupancy: "200", lat: 22.5120, lon: 88.3490, manager: "Anjali Pal", contact: "9822223344" },
+  { name: "Rashbehari Avenue Crossing Parking", occupancy: "170", lat: 22.5035, lon: 88.3575, manager: "Koushik Bhattacharya", contact: "9876034567" },
+  { name: "Alipore Zoo Parking", occupancy: "400", lat: 22.5372, lon: 88.3330, manager: "Sampa Sen", contact: "9830012345" },
+  { name: "New Alipore Petrol Pump Parking", occupancy: "90", lat: 22.5120, lon: 88.3265, manager: "Vikram Shah", contact: "9845001122" },
+  { name: "Behala Tram Depot Parking", occupancy: "160", lat: 22.4915, lon: 88.3080, manager: "Ankita Banerjee", contact: "9811200110" },
+  { name: "Garia Station Parking", occupancy: "220", lat: 22.4590, lon: 88.3785, manager: "Niladri Sinha", contact: "9823123456" },
+  { name: "Ruby Hospital Parking", occupancy: "250", lat: 22.5125, lon: 88.4000, manager: "Shraddha Kapoor", contact: "9800887654" }
+];
+
+  let map;
+  let toLat, toLon, toName;
+  let markers = [];
+  let currentMode = 'default';
+
+  // Simulate real-time availability
+  parkingData.forEach(spot => {
+    const occupied = Math.floor(Math.random() * spot.occupancy);
+    spot.availability = spot.occupancy - occupied;
+  });
+
+  function getQueryParams() {
+    const params = new URLSearchParams(window.location.hash.substring(1));
+    return {
+      toLat: parseFloat(params.get('toLat')),
+      toLon: parseFloat(params.get('toLon')),
+      toName: decodeURIComponent(params.get('toName') || "Your Destination")
+    };
+  }
+
+  function haversineDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  function addMarker(map, parking) {
+    const customMarker = L.divIcon({
+      className: 'custom-marker',
+      html: '<div style="color: red; font-size: 16px; font-weight: bold; background: white; padding: 4px; border-radius: 5px; border: 2px solid red;">P</div>',
+      iconSize: [20, 20]
+    });
+
+    const marker = L.marker([parking.lat, parking.lon], { icon: customMarker })
+      .addTo(map)
+      .bindPopup(`<b>${parking.name}</b><br>Available: ${parking.availability}<br>Distance: ${parking.distance} km`);
+    
+    markers.push(marker);
+  }
+
+  function addToSidebar(containerId, parking) {
+    const div = document.createElement('div');
+    div.innerHTML = `
+      <strong>${parking.name}</strong><br>
+      Occupancy: ${parking.occupancy}<br>
+      <strong>Available Slots: ${parking.availability}</strong><br>
+      Distance: ${parking.distance} km<br>
+      <strong>Manager:</strong> ${parking.manager}<br>
+      <strong>Contact:</strong> ${parking.contact}<br>
+      <a href="page_4.html?lat=${parking.lat}&lon=${parking.lon}&name=${encodeURIComponent(parking.name)}&manager=${encodeURIComponent(parking.manager)}&contact=${parking.contact}" target="_blank">Book Now</a>
+    `;
+    document.getElementById(containerId).appendChild(div);
+  }
+
+  function clearMarkersAndSidebar() {
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+    document.getElementById('nearby-parking').innerHTML = '';
+    document.getElementById('far-parking').innerHTML = '';
+  }
+
+  function calculateDefaultScore(p) {
+    const availability = p.availability / 100;
+    const distance = p.distance / 10;
+    const occupancy = p.occupancy / 100;
+
+    const w_availability = 0.7;
+    const w_distance = -0.2;
+    const w_occupancy = -0.1;
+
+    return Math.max(0, (availability * w_availability) + (distance * w_distance) + (occupancy * w_occupancy));
+  }
+
+  function calculatePriorityScore(p) {
+    const availability = p.availability / 100;
+    const distance = p.distance / 10;
+    const occupancy = p.occupancy / 100;
+
+    const w_distance = -0.7;
+    const w_availability = 0.2;
+    const w_occupancy = -0.1;
+
+    return Math.max(0, (distance * w_distance) + (availability * w_availability) + (occupancy * w_occupancy));
+  }
+
+  function processParkingData(mode = 'default') {
+    const nearby = [];
+    const far = [];
+
+    parkingData.forEach(p => {
+      const distance = haversineDistance(toLat, toLon, p.lat, p.lon);
+      p.distance = parseFloat(distance.toFixed(2));
+      if (!p.occupancy) p.occupancy = Math.floor(Math.random() * 100);
+      if (!p.availability) p.availability = Math.floor(Math.random() * p.occupancy);
+
+      p.score = (mode === 'priority') ? calculatePriorityScore(p) : calculateDefaultScore(p);
+
+      if (p.distance <= 1) {
+        nearby.push(p);
+      } else {
+        far.push(p);
+      }
+    });
+
+    nearby.sort((a, b) => b.score - a.score);
+    far.sort((a, b) => b.score - a.score);
+
+    clearMarkersAndSidebar();
+
+    nearby.slice(0, 5).forEach(p => {
+      addMarker(map, p);
+      addToSidebar('nearby-parking', p);
+    });
+
+    far.slice(0, 10).forEach(p => {
+      addMarker(map, p);
+      addToSidebar('far-parking', p);
+    });
+  }
+
+  function initMap() {
+    const params = getQueryParams();
+    toLat = params.toLat;
+    toLon = params.toLon;
+    toName = params.toName;
+
+    if (!toLat || !toLon) {
+      alert("Destination coordinates missing!");
+      return;
+    }
+
+    map = L.map('map').setView([toLat, toLon], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+    L.marker([toLat, toLon])
+      .addTo(map)
+      .bindPopup(toName)
+      .openPopup();
+
+    processParkingData();
+  }
+
+  document.getElementById('priorityToggle').addEventListener('click', () => {
+    currentMode = (currentMode === 'default') ? 'priority' : 'default';
+    document.getElementById('priorityToggle').innerText = (currentMode === 'default') ? 'Priority Parking' : 'Default Parking';
+    processParkingData(currentMode);
+  });
+
+  window.onload = initMap;
+</script>
+
+</body>
+</html>

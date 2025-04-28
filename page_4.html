@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Booking Details</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #e3f2fd, #bbdefb);
+    }
+    #map {
+      height: 60%;
+      width: 100%;
+    }
+    .info-panel {
+      padding: 20px;
+      background-color: white;
+      border-top: 2px solid #1976d2;
+      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.1);
+    }
+    .info-panel h2 {
+      margin: 0;
+      font-size: 24px;
+      color: #1976d2;
+    }
+    .info-panel p {
+      font-size: 18px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="map"></div>
+  <div class="info-panel">
+    <h2 id="locationName">Parking Location</h2>
+    <p><strong>Manager Name:</strong> <span id="managerName">Loading...</span></p>
+    <p><strong>Contact Number:</strong> <span id="contactNumber">Loading...</span></p>
+    <p><strong>Parking Fee:</strong> <span id="parkingFee">Loading...</span></p>
+    <p><em>*Park for 4 consecutive days to get ₹30 discount on total bill!</em></p>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const parkingData = [
+  { name: "Dlf Parking", occupancy: "50", lat: 22.58415062, lon: 88.44566938, manager: "Arjun Mehta", contact: "9876543210" },
+  { name: "Central mall", occupancy: "100", lat: 22.58341066, lon: 88.45874035, manager: "Rita Singh", contact: "9812345678" },
+  { name: "Presidency University", occupancy: "50", lat: 22.58181676, lon: 88.4779421, manager: "Dr. Anil Ghosh", contact: "9833123456" },
+  { name: "Opposite Presidency University", occupancy: "60", lat: 22.58278134, lon: 88.47676837, manager: "Pratik Roy", contact: "9876541230" },
+  { name: "Tata Medical", occupancy: "20", lat: 22.57760232, lon: 88.47849464, manager: "Suman Das", contact: "9822456789" },
+  { name: "Chinar Park", occupancy: "40", lat: 22.62510719, lon: 88.43718924, manager: "Megha Sharma", contact: "9800123456" },
+  { name: "Mothers Wax Museum", occupancy: "50", lat: 22.59980777, lon: 88.47160423, manager: "Ajay Dutta", contact: "9898765432" },
+  { name: "Eco Park Golf Arena", occupancy: "50", lat: 22.60781662, lon: 88.46387953, manager: "Nisha Paul", contact: "9765432109" },
+  { name: "Eco Park Gate 4", occupancy: "50", lat: 22.6111625, lon: 88.4662039, manager: "Rahul Sen", contact: "9811223344" },
+  { name: "Eco Park Beside Misti Hub", occupancy: "50", lat: 22.60726274, lon: 88.46793746, manager: "Debjani Chakraborty", contact: "9877098765" },
+  { name: "Eco Park", occupancy: "40", lat: 22.59454192, lon: 88.47215929, manager: "Pritam Nandi", contact: "9823001234" },
+  { name: "Mani Square Mall Parking", occupancy: "1200", lat: 22.5765, lon: 88.3963, manager: "Anita Sinha", contact: "9850067890" },
+  { name: "Kankurgachi Parking Lot", occupancy: "100", lat: 22.5726, lon: 88.3921, manager: "Manoj Sardar", contact: "9800456123" },
+  { name: "Shyambazar 5-Point Crossing Parking", occupancy: "150", lat: 22.6018, lon: 88.3774, manager: "Sunita Roy", contact: "9876554321" },
+  { name: "Hatibagan Market Parking", occupancy: "200", lat: 22.5850, lon: 88.3680, manager: "Rajeev Halder", contact: "9833001122" },
+  { name: "Bagbazar Ghat Parking", occupancy: "80", lat: 22.6042, lon: 88.3705, manager: "Neel Sengupta", contact: "9844122334" },
+  { name: "Sovabazar Metro Parking", occupancy: "120", lat: 22.6000, lon: 88.3742, manager: "Sudipta Choudhury", contact: "9812333444" },
+  { name: "Ultadanga Hudco More Parking", occupancy: "180", lat: 22.5958, lon: 88.3925, manager: "Priya Dey", contact: "9876000011" },
+  { name: "Lake Town Parking Area", occupancy: "160", lat: 22.6010, lon: 88.4080, manager: "Amitava Ghosh", contact: "9867543210" },
+  { name: "Dum Dum Station Parking", occupancy: "250", lat: 22.6195, lon: 88.3910, manager: "Joydeep Pal", contact: "9843012345" },
+  { name: "Belgachia Metro Parking", occupancy: "100", lat: 22.6035, lon: 88.3830, manager: "Tamal Dutta", contact: "9811220099" },
+  { name: "Nagerbazar Parking Lot", occupancy: "130", lat: 22.6278, lon: 88.3965, manager: "Tanushree Basu", contact: "9800045678" },
+  { name: "Paikpara Raja Manindra Road Parking", occupancy: "90", lat: 22.6050, lon: 88.3790, manager: "Somnath Bera", contact: "9820099112" },
+  { name: "Chitpur Station Parking", occupancy: "110", lat: 22.6180, lon: 88.3715, manager: "Ranjan Paul", contact: "9845087654" },
+  { name: "Cossipore Road Parking", occupancy: "70", lat: 22.6310, lon: 88.3685, manager: "Bikash Nandi", contact: "9898223344" },
+  { name: "R.G. Kar Medical College Parking", occupancy: "140", lat: 22.5950, lon: 88.3795, manager: "Anupam Das", contact: "9834112233" },
+  { name: "South City Mall Rooftop Parking", occupancy: "500", lat: 22.5018, lon: 88.3613, manager: "Rakesh Mehra", contact: "9810009876" },
+  { name: "Gariahat Market Parking", occupancy: "300", lat: 22.5175, lon: 88.3667, manager: "Madhuri Saha", contact: "9845432100" },
+  { name: "Kalighat Temple Parking", occupancy: "250", lat: 22.5170, lon: 88.3460, manager: "Binod Kumar", contact: "9877011223" },
+  { name: "Jadavpur 8B Bus Stand Parking", occupancy: "200", lat: 22.4980, lon: 88.3700, manager: "Sneha Roy", contact: "9800678923" },
+  { name: "Tollygunge Metro Station Parking", occupancy: "180", lat: 22.4910, lon: 88.3465, manager: "Avik Saha", contact: "9867000011" },
+  { name: "Prince Anwar Shah Road Parking", occupancy: "150", lat: 22.5030, lon: 88.3540, manager: "Namrata Mukherjee", contact: "9833667890" },
+  { name: "Ballygunge Station Parking", occupancy: "120", lat: 22.5210, lon: 88.3660, manager: "Rajashree Das", contact: "9812347890" },
+  { name: "Deshapriya Park Parking", occupancy: "130", lat: 22.5125, lon: 88.3535, manager: "Soham Ghosh", contact: "9844002211" },
+  { name: "Lake Mall Parking", occupancy: "200", lat: 22.5120, lon: 88.3490, manager: "Anjali Pal", contact: "9822223344" },
+  { name: "Rashbehari Avenue Crossing Parking", occupancy: "170", lat: 22.5035, lon: 88.3575, manager: "Koushik Bhattacharya", contact: "9876034567" },
+  { name: "Alipore Zoo Parking", occupancy: "400", lat: 22.5372, lon: 88.3330, manager: "Sampa Sen", contact: "9830012345" },
+  { name: "New Alipore Petrol Pump Parking", occupancy: "90", lat: 22.5120, lon: 88.3265, manager: "Vikram Shah", contact: "9845001122" },
+  { name: "Behala Tram Depot Parking", occupancy: "160", lat: 22.4915, lon: 88.3080, manager: "Ankita Banerjee", contact: "9811200110" },
+  { name: "Garia Station Parking", occupancy: "220", lat: 22.4590, lon: 88.3785, manager: "Niladri Sinha", contact: "9823123456" },
+  { name: "Ruby Hospital Parking", occupancy: "250", lat: 22.5125, lon: 88.4000, manager: "Shraddha Kapoor", contact: "9800887654" }
+];
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const parkingName = urlParams.get("name");
+
+    const selected = parkingData.find(p => p.name === parkingName);
+
+    if (selected) {
+      document.getElementById("locationName").textContent = selected.name;
+      document.getElementById("managerName").textContent = selected.manager;
+      document.getElementById("contactNumber").textContent = selected.contact;
+
+      const map = L.map('map').setView([selected.lat, selected.lon], 16);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+      L.marker([selected.lat, selected.lon]).addTo(map)
+        .bindPopup(`${selected.name}`).openPopup();
+    } else {
+      alert("Parking location not found!");
+    }
+    // Calculate and display parking fee
+      const getParkingFeeText = () => {
+      let feeText = "₹20 for 1st hour. +₹10/hour up to 12 hours. Max ₹150 after that.";
+      return feeText;
+    };
+document.getElementById("parkingFee").textContent = getParkingFeeText();
+
+  </script>
+
+</body>
+</html>
